@@ -1,7 +1,7 @@
 name: publish
 on:
   schedule:
-    - cron: "*/10 * * * *"   # UTC; Instagram posts are published within ~10-20 minutes of their publish_at (Amit: that precision is fine)
+    - cron: "3,18,33,48 * * * *"   # UTC, every 15 min at off-peak minutes (GitHub throttles/delays */N and :00/:30); posts go out within ~15-30 min of publish_at
   workflow_dispatch:
     inputs:
       dry_run:

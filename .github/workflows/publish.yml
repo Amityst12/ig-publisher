@@ -1,0 +1,33 @@
+name: publish
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # UTC; Instagram posts are published within ~10-20 minutes of their publish_at (Amit: that precision is fine)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: create the containers only, publish nothing"
+        type: boolean
+        default: false
+concurrency:
+  group: ig-publish
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Publish due posts
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: bun scripts/publish-queue.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+      - name: Commit queue changes
+        if: always()
+        run: |
+          git config user.name "ig-publisher"
+          git config user.email "ig-publisher@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || (git commit -m "queue update [skip ci]" && git push)
